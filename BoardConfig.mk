@@ -54,7 +54,20 @@ TARGET_CPU_SMP := true
 # CONFIG_SECURITY_SELINUX_POLICYDB_VERSION_MAX_VALUE override), matching
 # the policyvers 30 this device's own SELinux reports at runtime.
 TARGET_PREBUILT_KERNEL := device/htc/m8/prebuilt/kernel
+# The flashed image's own header carries no androidboot.selinux token
+# (see above), but recovery's own cmdline is not required to match the
+# ROM's boot.img byte for byte, and TWRP needs the token restored: the
+# ROM's own sepolicy labels the android_usb sysfs nodes
+# usb_function_switch writes to, while TWRP's recovery policy carries
+# none of those labels, so an enforcing recovery would deny the write
+# and adb -- the only log channel a RAM-boot test has -- would never
+# bind. The pinned kernel's own embedded ikconfig carries
+# CONFIG_SECURITY_SELINUX_DEVELOP=y, so the kernel honors the token, and
+# TeamWin's own android-8.1 tree (the one that produced the official,
+# booting twrp-3.7.0_9-0-m8.img) carries the same token in its recovery
+# cmdline.
 BOARD_KERNEL_CMDLINE := console=none androidboot.hardware=qcom user_debug=31 ehci-hcd.park=3 zcache loop.max_part=7
+BOARD_KERNEL_CMDLINE += androidboot.selinux=permissive
 BOARD_KERNEL_BASE := 0x00000000
 BOARD_KERNEL_PAGESIZE := 2048
 
