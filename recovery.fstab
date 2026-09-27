@@ -14,10 +14,25 @@
 # evidence/camera-root-cause/logcat-kernel.txt:1655-1666, "Invalid f2fs
 # superblock ... mount(...,ext4)=0: Success"), so the physical format is
 # ext4 regardless of the ROM tree's declared preference.
+#
+# No /misc entry: bootable_recovery/bootloader_message/bootloader_message.h
+# hardcodes BOOTLOADER_MESSAGE_OFFSET_IN_MISC = 0 on this manifest
+# generation ("not configurable without changing all of them"), reserving
+# byte 0 for the AOSP struct and bytes 2048-16384 for "Vendor's
+# bootloader". TeamWin's own android-8.1 BoardConfig.mk and
+# msm8974-common's BoardConfigCommon.mk both set
+# BOARD_HAS_NO_MISC_PARTITION/BOOTLOADER_MESSAGE_OFFSET := 2048 for this
+# same hardware, meaning hboot's own control block starts at the misc
+# partition's byte 0 on this device -- the opposite of what this
+# manifest's hardcoded offset assumes. get_misc_blk_device()
+# (bootloader_message.cpp) finds the misc block device by searching the
+# recovery fstab for mount_point "/misc"; omitting the entry here makes
+# every BCB read/write on this code path fail closed (empty device path)
+# instead of writing bootloader_message.h's own struct over hboot's
+# control data at offset 0.
 
 /boot           emmc        /dev/block/platform/msm_sdcc.1/by-name/boot          flags=backup=1
 /recovery       emmc        /dev/block/platform/msm_sdcc.1/by-name/recovery      flags=backup=1
-/misc           emmc        /dev/block/platform/msm_sdcc.1/by-name/misc         flags=backup=0
 /system         ext4        /dev/block/platform/msm_sdcc.1/by-name/system        flags=backup=1;wipeingui;
 /cache          ext4        /dev/block/platform/msm_sdcc.1/by-name/cache        flags=backup=1;wipeingui;wipeduringfactoryreset;canencryptbackup=1
 /data           ext4        /dev/block/platform/msm_sdcc.1/by-name/userdata     flags=backup=1;wipeingui;wipeduringfactoryreset;canencryptbackup=1;userdataencryptbackup=1

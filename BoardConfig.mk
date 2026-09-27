@@ -104,16 +104,13 @@ BOARD_USES_QCOM_HARDWARE := true
 TARGET_RECOVERY_FSTAB := device/htc/m8/recovery.fstab
 RECOVERY_SDCARD_ON_DATA := true
 
-# bootable/recovery/Android.mk's own twrp_ramdisk-timestamp recipe relinks
-# system/etc/task_profiles.json into the ramdisk (libprocessgroup reads
-# it) with a plain shell cp and no ninja edge that builds the file first;
-# `make recoveryimage` never processes PRODUCT_PACKAGES (that drives
-# system.img, a target this build never runs), so a PRODUCT_PACKAGES
-# entry is not a producer here. TARGET_RECOVERY_DEVICE_MODULES is: it
-# feeds TWRP_REQUIRED_MODULES the same way plat_service_contexts and
-# hwservicemanager already do (Android.mk lines 545-551), which is why
-# those two build successfully with no device-tree entry of their own.
-TARGET_RECOVERY_DEVICE_MODULES += task_profiles.json
+# bootable/recovery's own twrp_ramdisk module omits task_profiles.json
+# from its LOCAL_REQUIRED_MODULES despite copying it in the same recipe
+# (every other file that recipe copies is listed there); the fix lives in
+# the pinned bootable/recovery fork
+# (Oichkatzelesfrettschen/android_bootable_recovery-m8-twrp,
+# m8-task-profiles-fix), not here -- no BoardConfig variable orders a
+# BUILD_PHONY_PACKAGE's own post-install recipe against another module.
 
 # TWRP UI. 1080x1920 panel (msm8974-common BoardConfigCommon.mk,
 # TARGET_SCREEN_DENSITY := 480); portrait_hdpi is the theme
