@@ -22,23 +22,63 @@ Both are prebuilt blobs, not built from a dts source tree in this repo:
   `/proc/version` identifies (`Linux version 3.4.113-g4140df22`,
   `Projects/Android/HTC/evidence/watchdog-bite-nonrepro-20260926`). Built
   with `m8_defconfig` and the LineageOS 18.1 GCC 4.9.x (20150123) prebuilt
-  cross toolchain.
-  sha256 `4878c9b7d1e21c5b9460ed84e8e16b97893f8faffb10117ca3a9f2dbc962d240`.
-- `prebuilt/dt.img`: the QCDT multi-entry device-tree blob unpacked from
-  this device's own flashed boot.img. Confirmed byte-identical
-  (sha256 `0721ba9b1e40f07c12f7eeac8bd3dabd83272a2c751f72eb664e2b2f35b57201`)
-  across every M8 kernel build sampled this session, including one built
-  from a kernel commit roughly 2000 commits ahead of the pin above -- the
-  QCDT table is a static hardware description, not kernel-version-dependent.
+  cross toolchain. This is a rebuild from that commit's source, not an
+  extraction from the flashed binary: kernel builds are not
+  byte-reproducible across build environments, so this sha256
+  (`4878c9b7d1e21c5b9460ed84e8e16b97893f8faffb10117ca3a9f2dbc962d240`)
+  differs from the flashed image's own kernel blob
+  (`316967b3a3ad181cb11ffd3b111e176f3f42ceeaca25811eda7dd66bd6a90c1f`, from
+  build076's own boot.img, unpacked this session).
+  `arch/arm/configs/m8_defconfig` (and this same commit family's own
+  captured `.config`, `~/Github/m8/lineage-22.2/out/target/product/m8/obj/KERNEL_OBJ/.config`)
+  leave `CONFIG_USB_FUNCTIONFS` unset in favor of `CONFIG_USB_G_ANDROID=y`:
+  the FunctionFS AIO source support cited below exists in this kernel's
+  tree, but the shipped configuration does not build that gadget driver in.
+  `bootable_recovery@android-14.1`'s own default
+  `etc/init.recovery.usb.rc` already targets `/sys/class/android_usb/android0/*`
+  (not configfs), matching this kernel's actual gadget driver, so
+  `TW_EXCLUDE_DEFAULT_USB_INIT` stays unset and no device-specific USB rc
+  is carried (TeamWin's `android-8.1` tree's own
+  `recovery/root/init.recovery.usb.rc`, deleted here, wrote to the same
+  sysfs nodes with HTC's own idVendor/idProduct; the default's generic
+  Google IDs enumerate `adb` over Linux `usbfs` identically, since the host
+  matches by the ADB interface class, not by VID/PID).
+- `prebuilt/dt.img`: the QCDT multi-entry device-tree blob unpacked
+  directly from build076's own boot.img (sha256
+  `f7437c450d47ba902caf4aa7008b2ee6627df14e1220db483af48a52f59aca99`,
+  `HARDWARE_REFERENCE_MATRIX.md` row 16/276), sha256
+  `0721ba9b1e40f07c12f7eeac8bd3dabd83272a2c751f72eb664e2b2f35b57201`,
+  matching byte-for-byte.
+
+## Verified non-issues
+
+Two risks the porting roadmap left open, checked this session and closed
+without a code change:
+
+- **cgroup2 per-service fatal path** (`twrp-14`/`twrp-14.1` only,
+  `TWRP_NEWEST_ROADMAP.md`'s blockers table): this kernel's compat cgroup2
+  filesystem (`d21c4ade876`) mounts a real `cgroup2` filesystem at boot, so
+  `createProcessGroup()` succeeds through the ordinary path and never
+  reaches the fatal branch; `~/Github/m8/lineage-22.2/system/core` carries
+  no "process group" revert commit (`git log --grep`, empty), and needs
+  none, because the mount itself succeeds. This mechanism is generic AOSP
+  `init` code, shared between the ROM's ramdisk and TWRP's own ramdisk on
+  this manifest generation, not something either side sets up specially.
+- **USB gadget mechanism**: see `prebuilt/kernel` above.
 
 ## Boot header
 
-`BoardConfig.mk`'s cmdline, base, pagesize and the three load offsets come
-from `device/htc/msm8974-common@lineage-22.2-m8`'s own
-`BoardConfigCommon.mk` (the ROM tree this device actually runs), not from
-the frozen `android-8.1` tree's own values, which differ (that tree's
-cmdline lacks `console=none`/`zcache` in the same order and its kernel
-offset macro names differ). `--dt`'s QCDT packer is
+`BoardConfig.mk`'s cmdline, base, pagesize and the three load offsets are
+read back with `unpackbootimg` from build076's own boot.img directly, not
+assumed from `device/htc/msm8974-common`'s `BoardConfigCommon.mk`: that
+tree's declared `BOARD_KERNEL_CMDLINE` additions do not all survive into
+the final image (the flashed header carries no `androidboot.selinux`
+token, and does carry `loop.max_part=7`, the adoptable-storage support
+`BoardConfigCommon.mk` adds for the same reason,
+`HARDWARE_REFERENCE_MATRIX.md` row 20a). Nor from the frozen `android-8.1`
+tree's own values, which differ further still (that tree's cmdline lacks
+`console=none`/`zcache` in the same order and its kernel offset macro
+names differ). `--dt`'s QCDT packer is
 `tools/mkbootimg_dt`, bound through `BOARD_CUSTOM_MKBOOTIMG`
 (`build/make/core/config.mk:683-686` on this manifest, confirmed present),
 because upstream `system/tools/mkbootimg` dropped the v0 header's `--dt`
@@ -49,10 +89,10 @@ already proved on this manifest generation.
 
 ## fstab
 
-`recovery.fstab`'s by-name paths are lifted from
-`device/htc/msm8974-common@lineage-22.2-m8`'s own `rootdir/etc/fstab.qcom`,
-the fstab this device's own ueventd already builds those
-`/dev/block/platform/msm_sdcc.1/by-name/*` links for.
+`recovery.fstab`'s by-name paths are lifted from the tree that actually
+built build076, `~/Github/m8/lineage-22.2/device/htc/msm8974-common`'s own
+`rootdir/etc/fstab.qcom`, the fstab this device's own ueventd already
+builds those `/dev/block/platform/msm_sdcc.1/by-name/*` links for.
 
 ## Scope cuts
 
