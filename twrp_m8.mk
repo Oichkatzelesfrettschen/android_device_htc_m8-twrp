@@ -6,6 +6,11 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/full_base_telephony.mk)
 $(call inherit-product, $(SRC_TARGET_DIR)/product/languages_full.mk)
 $(call inherit-product, vendor/twrp/config/common.mk)
 
+# Gives $(PRODUCT_OUT)/dt.img a producer: build/make/core/Makefile makes
+# it a hard prerequisite of recovery.img whenever BOARD_KERNEL_SEPARATED_DT
+# is true, unconditionally on BOARD_KERNEL_PREBUILT_DT (BoardConfig.mk).
+PRODUCT_COPY_FILES += device/htc/m8/prebuilt/dt.img:dt.img
+
 # vendor/twrp/config/packages.mk pulls bash, nano, vim, htop and powertop
 # in for external/libncurses's terminfo data; ncurses install runs through
 # ALL_DEFAULT_INSTALLED_MODULES unconditionally on any project inclusion,

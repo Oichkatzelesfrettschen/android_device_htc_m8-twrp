@@ -78,15 +78,23 @@ BOARD_MKBOOTIMG_ARGS += \
     --kernel_offset 0x00008000 \
     --ramdisk_offset 0x02008000 \
     --second_offset 0x00000000 \
-    --tags_offset 0x01e00000 \
-    --dt device/htc/m8/prebuilt/dt.img
+    --tags_offset 0x01e00000
 
-# The dt.img above is a checked-in blob unpacked directly from the
-# build076 boot.img cited above (sha256
-# 0721ba9b1e40f07c12f7eeac8bd3dabd83272a2c751f72eb664e2b2f35b57201,
-# matching byte-for-byte), not built from a dts source tree (there is none
-# here: the kernel is TARGET_PREBUILT_KERNEL too), so
-# vendor/twrp/build/tasks/dt_image.mk's dtbToolCM path is skipped.
+# build/make/core/Makefile (lines 1361-1364, 2720-2722) sets
+# INSTALLED_DTIMAGE_TARGET := $(PRODUCT_OUT)/dt.img and makes it a hard
+# ninja prerequisite of both boot.img and recovery.img whenever
+# BOARD_KERNEL_SEPARATED_DT is true, appending its own "--dt
+# $(INSTALLED_DTIMAGE_TARGET)" to INTERNAL_RECOVERYIMAGE_ARGS -- this runs
+# unconditionally, not gated on BOARD_KERNEL_PREBUILT_DT the way
+# vendor/twrp/build/tasks/dt_image.mk's dtbToolCM rule is. Setting
+# BOARD_KERNEL_PREBUILT_DT := true skips only dt_image.mk's own rule for
+# that target, leaving it with no producer at all and ninja fails
+# ("missing and no known rule to make it") -- this is the roadmap's own
+# named, unverified risk on this manifest generation, now confirmed by a
+# real build. twrp_m8.mk's PRODUCT_COPY_FILES entry is the fix: it gives
+# $(PRODUCT_OUT)/dt.img a producer (a plain copy of the checked-in blob
+# below), so no BOARD_MKBOOTIMG_ARGS "--dt" is set here at all -- the
+# Makefile's own unconditional flag already points at the right file.
 BOARD_KERNEL_SEPARATED_DT := true
 BOARD_KERNEL_PREBUILT_DT := true
 
