@@ -121,6 +121,15 @@ TW_NO_SCREEN_BLANK := true
 TW_EXCLUDE_NANO := true
 TW_EXCLUDE_BASH := true
 
+# device/htc/msm8974-common's own ROM-side init.qcom.usb.rc writes
+# usb_function_switch (drivers/usb/gadget/htc_attr.c's own bitmask store)
+# on every function transition, alongside the base android_usb
+# functions/enable pair; bootable_recovery's generic default rc writes
+# only the base pair. TeamWin's own recovery/root/init.recovery.usb.rc,
+# the file that shipped in the official twrp-3.7.0_9-0-m8.img, already
+# carries both, so it replaces the default here rather than patching it.
+TW_EXCLUDE_DEFAULT_USB_INIT := true
+
 # Scope cuts, named rather than made silently:
 # - No TW_INCLUDE_CRYPTO: ro.crypto.state reads unsupported on this
 #   device's flashed Android 15 build (Projects/Android/HTC/evidence/

@@ -39,36 +39,48 @@ not built from a dts or kernel source tree in this repo:
 `CONFIG_USB_G_ANDROID` selects) `#include`s `f_fs.c` directly and calls
 `functionfs_init()`, so FunctionFS is compiled into this kernel's USB
 gadget regardless of the standalone `CONFIG_USB_FUNCTIONFS` module option,
-which `m8_defconfig` leaves unset. `bootable_recovery@android-14.1`'s
-own default `etc/init.recovery.usb.rc` targets
-`/sys/class/android_usb/android0/*` and mounts `/dev/usb-ffs/adb` itself,
-matching this kernel's gadget mechanism, so `TW_EXCLUDE_DEFAULT_USB_INIT`
-stays unset and no device-specific USB rc is carried (TeamWin's
-`android-8.1` tree's own `recovery/root/init.recovery.usb.rc`, deleted
-here, wrote to the same sysfs nodes with HTC's own idVendor/idProduct; the
-default's generic Google IDs enumerate `adb` over Linux `usbfs`
-identically, since the host matches by the ADB interface class, not by
-VID/PID). `recovery/root/init.recovery.qcom.rc` carries the three
+which `m8_defconfig` leaves unset. This same composite driver's own
+`htc_attr.c` extension gates real function binding behind a store on
+`usb_function_switch` (`android_switch_function()`, which no-ops unless
+that bitmask is written after the base `functions`/`enable` pair);
+`device/htc/msm8974-common`'s own ROM-side `init.qcom.usb.rc` writes it on
+every single function transition, and `bootable_recovery@android-14.1`'s
+generic default `etc/init.recovery.usb.rc` does not write it at all.
+`TW_EXCLUDE_DEFAULT_USB_INIT` therefore replaces that default with
+`TeamWin/android_device_htc_m8@android-8.1`'s own
+`recovery/root/init.recovery.usb.rc`, the file that shipped in the
+official `twrp-3.7.0_9-0-m8.img`, carried forward unmodified (it already
+writes `usb_function_switch` on every transition, with HTC's own
+idVendor/idProduct). `recovery/root/init.recovery.qcom.rc` adds the three
 properties (`sys.usb.ffs.aio_compat`, `persist.adb.nonblocking_ffs`,
 `ro.adb.nonblocking_ffs`) `device/htc/msm8974-common`'s own ROM-side
 init.recovery.qcom.rc sets for the same adbd-over-FFS path.
 
-## Verified non-issue: the cgroup2 per-service fatal path
+## The cgroup2 per-service fatal path: strong evidence, not fully closed
 
 `twrp-14`/`twrp-14.1`'s `init` aborts a service whose `createProcessGroup()`
 fails (the roadmap's blockers table names this as a real, unresolved risk
 for a kernel lacking cgroup2). `~/Github/twrp14-m8/system/core/init/service.cpp`
-and `~/Github/m8/lineage-22.2/system/core/init/service.cpp` both carry
-this exact fatal path unmodified, at nearly the same line number, so
-neither tree reverts it. The ROM build boots and runs real services on
-this same kernel today
-(`Projects/Android/HTC/evidence/lineage22-job036-boot/dmesg.txt`), which
-means `createProcessGroup()` is not failing on this kernel: its compat
-cgroup2 filesystem (`d21c4ade876`, "cgroup: Add compat cgroup2 fs") mounts
-a real `cgroup2` filesystem at boot, so the ordinary path succeeds and the
-fatal branch is never reached. This mechanism is generic AOSP `init`
-code, shared between the ROM's ramdisk and TWRP's own ramdisk on this
-manifest generation, not something either side sets up specially.
+and the shallow-cloned `~/Github/m8/lineage-22.2/system/core/init/service.cpp`
+both carry this exact fatal path unmodified, at nearly the same line
+number. `HTC/notes/ANDROID15_PORT_LOG.md` names a local, unpushed
+`system/core` commit (`f88047dcb`, "Fix support for devices without
+cgroupv2 support") among the patches this device's Android 15 port
+carries, but the shallow clone (depth 1, one commit visible) cannot
+confirm whether that commit reached the tree that built the
+currently-flashed image, or targets a file this session did not check.
+What is certain: the ROM build boots and runs real services on this same
+kernel today (`Projects/Android/HTC/evidence/lineage22-job036-boot/dmesg.txt`),
+past dozens of services reaching running PIDs, which a service cannot do
+if `createProcessGroup()` hit the fatal path first. The kernel's own
+compat cgroup2 filesystem (`d21c4ade876`, "cgroup: Add compat cgroup2
+fs") is present at the pinned commit and is sufficient on its own to
+explain that outcome (a real `cgroup2` mount lets the ordinary path
+succeed without any userspace patch), so the most likely account is that
+no revert is needed here regardless of what `f88047dcb` fixes elsewhere.
+The RAM-boot test is this claim's real falsifier: a service that never
+reaches a running PID in `logcat`/`dmesg` would mean this reasoning
+missed something.
 
 ## Boot header
 
