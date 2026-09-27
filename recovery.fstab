@@ -1,17 +1,19 @@
 # SPDX-License-Identifier: Apache-2.0
 # TWRP fstab: <Mount Point> <Fstype> <Block Device> [<Length>] [flags=...]
 #
-# By-name paths lifted from the tree that actually built the flashed
-# build076 image, ~/Github/m8/lineage-22.2/device/htc/msm8974-common's own
-# rootdir/etc/fstab.qcom (cross-checked against a separate clone of
-# device/htc/msm8974-common@lineage-22.2-m8; the two agree on every by-name
-# path, differing only in a SELinux fs_mgr context= flag TWRP's own fstab
-# format has no field for, and a zram swap line recovery does not need),
-# the fstab this device's own ueventd already builds these
-# /dev/block/platform/msm_sdcc.1/by-name/* links for. RECOVERY_SDCARD_ON_DATA
-# in BoardConfig.mk maps TWRP's "Internal Storage" onto /data/media: this
-# device has no dedicated sdcard partition (DEVICE_STATE.md: "no external SD
-# card -- internal storage only").
+# By-name paths lifted from device/htc/msm8974-common's own
+# rootdir/etc/fstab.qcom, the fstab this device's own ueventd already
+# builds these /dev/block/platform/msm_sdcc.1/by-name/* links for.
+# RECOVERY_SDCARD_ON_DATA in BoardConfig.mk maps TWRP's "Internal Storage"
+# onto /data/media: this device has no dedicated sdcard partition
+# (DEVICE_STATE.md: "no external SD card -- internal storage only").
+#
+# /cache is ext4, not the f2fs BoardConfigCommon.mk declares as its
+# preferred type: this partition's f2fs superblock is invalid on the
+# flashed device (libfs_mgr's own fallback log,
+# evidence/camera-root-cause/logcat-kernel.txt:1655-1666, "Invalid f2fs
+# superblock ... mount(...,ext4)=0: Success"), so the physical format is
+# ext4 regardless of the ROM tree's declared preference.
 
 /boot           emmc        /dev/block/platform/msm_sdcc.1/by-name/boot          flags=backup=1
 /recovery       emmc        /dev/block/platform/msm_sdcc.1/by-name/recovery      flags=backup=1

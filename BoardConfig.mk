@@ -6,14 +6,12 @@
 # variables.h@android-14.1).
 #
 # Kernel and boot-header facts below are read directly from the
-# currently-flashed build's own boot.img (build 076,
-# lineage-22.2-20260926-UNOFFICIAL-m8.zip, sha256
-# f7437c450d47ba902caf4aa7008b2ee6627df14e1220db483af48a52f59aca99,
-# HARDWARE_REFERENCE_MATRIX.md row 16/276), unpacked and read this session
-# with unpackbootimg, not assumed from the frozen TeamWin android-8.1
-# tree. A live boot_id capture of the same flashed kernel's own
-# /proc/version (Projects/Android/HTC/evidence/watchdog-bite-nonrepro-20260926,
-# "Linux version 3.4.113-g4140df22") pins the exact source commit below.
+# currently-flashed build's own boot.img (lineage-22.2-20260926-UNOFFICIAL-m8.zip,
+# sha256 f7437c450d47ba902caf4aa7008b2ee6627df14e1220db483af48a52f59aca99,
+# HARDWARE_REFERENCE_MATRIX.md row 16/276) with unpackbootimg, not assumed
+# from the frozen TeamWin android-8.1 tree or from device/htc/msm8974-common's
+# declared BoardConfigCommon.mk, whose BOARD_KERNEL_CMDLINE additions do not
+# all survive into the final image (see BOARD_KERNEL_CMDLINE below).
 
 TARGET_BOARD_PLATFORM := msm8974
 TARGET_BOARD_PLATFORM_GPU := qcom-adreno330
@@ -29,36 +27,33 @@ TARGET_CPU_ABI2 := armeabi
 TARGET_CPU_VARIANT := krait
 TARGET_CPU_SMP := true
 
-# Kernel: Oichkatzelesfrettschen/android_kernel_htc_msm8974
+# prebuilt/kernel is build076's own flashed kernel binary (sha256
+# 316967b3a3ad181cb11ffd3b111e176f3f42ceeaca25811eda7dd66bd6a90c1f, its
+# LZMA-compressed payload decompresses to a Linux version banner and an
+# embedded ikconfig identical to the source pin below), not a local
+# rebuild: a kernel build is not byte-reproducible across build
+# environments, and the RAM-boot test should not carry that variable
+# alongside the device tree itself. The pin is
+# Oichkatzelesfrettschen/android_kernel_htc_msm8974
 # @4140df22f96e040e5dd51d196e9bd65ad784738c (branch
 # kgsl-detach-recovery-ptp-interface, "usb: gadget: mtp: number the PTP
 # interface descriptor at bind"), the exact commit the flashed build's own
-# proc_version identifies. TARGET_PREBUILT_KERNEL below is rebuilt from
-# this commit's source (m8_defconfig, LineageOS 18.1's GCC 4.9.x prebuilt),
-# not extracted from the flashed binary -- kernel builds are not
-# byte-reproducible across build environments, so its sha256
-# (4878c9b7d1e21c5b9460ed84e8e16b97893f8faffb10117ca3a9f2dbc962d240) differs
-# from the flashed image's own kernel blob
-# (316967b3a3ad181cb11ffd3b111e176f3f42ceeaca25811eda7dd66bd6a90c1f, from
-# the build076 zip's own boot.img, unpacked this session). The commit
-# carries the cgroup2 compat filesystem (d21c4ade876, "cgroup: Add compat
-# cgroup2 fs"), FunctionFS AIO (drivers/usb/gadget/f_fs.c's
-# ffs_epfile_aio_read/write, unconditional in this tree, though
-# arch/arm/configs/m8_defconfig itself leaves CONFIG_USB_FUNCTIONFS unset
-# in favor of CONFIG_USB_G_ANDROID -- confirmed against this same commit
-# family's own captured .config, not just the source's Kconfig graph),
-# CONFIG_BPF_SYSCALL and CONFIG_CGROUP_BPF, and POLICYDB_VERSION_MAX 30
+# proc_version identifies; its embedded ikconfig matches an m8_defconfig
+# build with the LineageOS 18.1 GCC 4.9.x (20150123) prebuilt cross
+# toolchain byte-for-byte. The commit carries the cgroup2 compat
+# filesystem (d21c4ade876, "cgroup: Add compat cgroup2 fs"), so
+# createProcessGroup() succeeds through the ordinary mount path on
+# twrp-14.1's fatal-on-failure init (see README.md, "Verified
+# non-issues"). Its USB gadget is drivers/usb/gadget/android.c's composite
+# driver, which #includes f_fs.c directly (FunctionFS is compiled into
+# that composite driver regardless of the standalone CONFIG_USB_FUNCTIONFS
+# Kconfig option, which this defconfig leaves unset); recovery/root's
+# init.recovery.qcom.rc carries the three adbd-over-FFS properties this
+# kernel's gadget needs. POLICYDB_VERSION_MAX resolves to 30
 # (security/selinux/include/security.h, no
-# CONFIG_SECURITY_SELINUX_POLICYDB_VERSION_MAX_VALUE override), matching the
-# policyvers 30 this device's own SELinux reports at runtime.
+# CONFIG_SECURITY_SELINUX_POLICYDB_VERSION_MAX_VALUE override), matching
+# the policyvers 30 this device's own SELinux reports at runtime.
 TARGET_PREBUILT_KERNEL := device/htc/m8/prebuilt/kernel
-# Read back from the flashed build076 boot.img itself (unpackbootimg),
-# not from device/htc/msm8974-common's BoardConfigCommon.mk, whose
-# BOARD_KERNEL_CMDLINE additions do not all survive into the final image:
-# the flashed header carries no androidboot.selinux token at all, and
-# carries loop.max_part=7 (adoptable-storage support,
-# HARDWARE_REFERENCE_MATRIX.md row 20a) that BoardConfigCommon.mk does not
-# name directly.
 BOARD_KERNEL_CMDLINE := console=none androidboot.hardware=qcom user_debug=31 ehci-hcd.park=3 zcache loop.max_part=7
 BOARD_KERNEL_BASE := 0x00000000
 BOARD_KERNEL_PAGESIZE := 2048
@@ -69,10 +64,10 @@ BOARD_KERNEL_PAGESIZE := 2048
 # packer instead of reworking hboot, the same design
 # android_device_htc_a11chl's tools/mkbootimg_dt already proved on this
 # manifest generation. HOST_OUT_EXECUTABLES is defined later in
-# build/make/core/config.mk (line 686) than the point that includes this
-# file, so BOARD_CUSTOM_MKBOOTIMG stays a recursively-expanded (=)
-# variable; a := here would bake in an empty prefix and ninja would fail
-# on a bare "/mkbootimg_dt".
+# build/make/core/config.mk than the point that includes this file, so
+# BOARD_CUSTOM_MKBOOTIMG stays a recursively-expanded (=) variable; a :=
+# here would bake in an empty prefix and ninja would fail on a bare
+# "/mkbootimg_dt".
 BOARD_CUSTOM_MKBOOTIMG = $(HOST_OUT_EXECUTABLES)/mkbootimg_dt
 BOARD_MKBOOTIMG_ARGS += \
     --kernel_offset 0x00008000 \
@@ -80,31 +75,30 @@ BOARD_MKBOOTIMG_ARGS += \
     --second_offset 0x00000000 \
     --tags_offset 0x01e00000
 
-# build/make/core/Makefile (lines 1361-1364, 2720-2722) sets
-# INSTALLED_DTIMAGE_TARGET := $(PRODUCT_OUT)/dt.img and makes it a hard
-# ninja prerequisite of both boot.img and recovery.img whenever
-# BOARD_KERNEL_SEPARATED_DT is true, appending its own "--dt
-# $(INSTALLED_DTIMAGE_TARGET)" to INTERNAL_RECOVERYIMAGE_ARGS -- this runs
-# unconditionally, not gated on BOARD_KERNEL_PREBUILT_DT the way
-# vendor/twrp/build/tasks/dt_image.mk's dtbToolCM rule is. Setting
-# BOARD_KERNEL_PREBUILT_DT := true skips only dt_image.mk's own rule for
-# that target, leaving it with no producer at all and ninja fails
-# ("missing and no known rule to make it") -- this is the roadmap's own
-# named, unverified risk on this manifest generation, now confirmed by a
-# real build. twrp_m8.mk's PRODUCT_COPY_FILES entry is the fix: it gives
+# build/make/core/Makefile sets INSTALLED_DTIMAGE_TARGET :=
+# $(PRODUCT_OUT)/dt.img and makes it a hard ninja prerequisite of both
+# boot.img and recovery.img whenever BOARD_KERNEL_SEPARATED_DT is true,
+# appending its own "--dt $(INSTALLED_DTIMAGE_TARGET)" to
+# INTERNAL_RECOVERYIMAGE_ARGS -- unconditionally on BOARD_KERNEL_PREBUILT_DT,
+# unlike vendor/twrp/build/tasks/dt_image.mk's own dtbToolCM rule, which
+# that flag does gate. twrp_m8.mk's PRODUCT_COPY_FILES entry gives
 # $(PRODUCT_OUT)/dt.img a producer (a plain copy of the checked-in blob
-# below), so no BOARD_MKBOOTIMG_ARGS "--dt" is set here at all -- the
-# Makefile's own unconditional flag already points at the right file.
+# below), so BOARD_MKBOOTIMG_ARGS carries no "--dt" of its own here -- the
+# Makefile's own unconditional flag already names the right file.
 BOARD_KERNEL_SEPARATED_DT := true
 BOARD_KERNEL_PREBUILT_DT := true
 
 # msm8974-common BoardConfigCommon.mk (the ROM tree this device actually
 # runs): 24 MiB recovery partition, matching HARDWARE_REFERENCE_MATRIX.md
 # row 162 (de768e1, msm8974-common). An oversize image fails this build
-# rather than an hboot flash.
+# rather than an hboot flash. The ramdisk is xz for the same reason that
+# tree's own comment gives: a gzip recovery ramdisk pushes recovery.img
+# above this partition's budget.
 BOARD_RECOVERYIMAGE_PARTITION_SIZE := 25165824
 BOARD_BOOTIMAGE_PARTITION_SIZE := 16777216
 BOARD_FLASH_BLOCK_SIZE := 131072
+BOARD_RAMDISK_USE_XZ := true
+XZ := prebuilts/build-tools/$(HOST_PREBUILT_TAG)/bin/xz
 
 BOARD_USES_QCOM_HARDWARE := true
 TARGET_RECOVERY_FSTAB := device/htc/m8/recovery.fstab

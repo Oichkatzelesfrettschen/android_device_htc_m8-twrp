@@ -12,87 +12,104 @@ newest minimal manifest.
 
 ## Kernel and dt.img
 
-Both are prebuilt blobs, not built from a dts source tree in this repo:
+Both are prebuilt blobs unpacked directly from
+`lineage-22.2-20260926-UNOFFICIAL-m8.zip`'s own boot.img (sha256
+`f7437c450d47ba902caf4aa7008b2ee6627df14e1220db483af48a52f59aca99`,
+`HARDWARE_REFERENCE_MATRIX.md` row 16/276), the currently-flashed build,
+not built from a dts or kernel source tree in this repo:
 
-- `prebuilt/kernel`: `arch/arm/boot/zImage` built from
+- `prebuilt/kernel`: sha256
+  `316967b3a3ad181cb11ffd3b111e176f3f42ceeaca25811eda7dd66bd6a90c1f`. Its
+  LZMA payload decompresses to `Linux version 3.4.113-g4140df22 ... #2 SMP
+  PREEMPT Sat Sep 26 00:55:13 PDT 2026`, matching the flashed system's own
+  `/proc/version` byte-for-byte
+  (`Projects/Android/HTC/evidence/watchdog-bite-nonrepro-20260926`), and
+  its embedded ikconfig matches an `m8_defconfig` build with the
+  LineageOS 18.1 GCC 4.9.x (20150123) prebuilt cross toolchain
+  byte-for-byte. That short hash resolves to
   `Oichkatzelesfrettschen/android_kernel_htc_msm8974`
   @`4140df22f96e040e5dd51d196e9bd65ad784738c` (branch
-  `kgsl-detach-recovery-ptp-interface`), the exact commit this device's
-  currently-flashed `lineage-22.2-20260926-UNOFFICIAL-m8` build's own
-  `/proc/version` identifies (`Linux version 3.4.113-g4140df22`,
-  `Projects/Android/HTC/evidence/watchdog-bite-nonrepro-20260926`). Built
-  with `m8_defconfig` and the LineageOS 18.1 GCC 4.9.x (20150123) prebuilt
-  cross toolchain. This is a rebuild from that commit's source, not an
-  extraction from the flashed binary: kernel builds are not
-  byte-reproducible across build environments, so this sha256
-  (`4878c9b7d1e21c5b9460ed84e8e16b97893f8faffb10117ca3a9f2dbc962d240`)
-  differs from the flashed image's own kernel blob
-  (`316967b3a3ad181cb11ffd3b111e176f3f42ceeaca25811eda7dd66bd6a90c1f`, from
-  build076's own boot.img, unpacked this session).
-  `arch/arm/configs/m8_defconfig` (and this same commit family's own
-  captured `.config`, `~/Github/m8/lineage-22.2/out/target/product/m8/obj/KERNEL_OBJ/.config`)
-  leave `CONFIG_USB_FUNCTIONFS` unset in favor of `CONFIG_USB_G_ANDROID=y`:
-  the FunctionFS AIO source support cited below exists in this kernel's
-  tree, but the shipped configuration does not build that gadget driver in.
-  `bootable_recovery@android-14.1`'s own default
-  `etc/init.recovery.usb.rc` already targets `/sys/class/android_usb/android0/*`
-  (not configfs), matching this kernel's actual gadget driver, so
-  `TW_EXCLUDE_DEFAULT_USB_INIT` stays unset and no device-specific USB rc
-  is carried (TeamWin's `android-8.1` tree's own
-  `recovery/root/init.recovery.usb.rc`, deleted here, wrote to the same
-  sysfs nodes with HTC's own idVendor/idProduct; the default's generic
-  Google IDs enumerate `adb` over Linux `usbfs` identically, since the host
-  matches by the ADB interface class, not by VID/PID).
-- `prebuilt/dt.img`: the QCDT multi-entry device-tree blob unpacked
-  directly from build076's own boot.img (sha256
-  `f7437c450d47ba902caf4aa7008b2ee6627df14e1220db483af48a52f59aca99`,
-  `HARDWARE_REFERENCE_MATRIX.md` row 16/276), sha256
-  `0721ba9b1e40f07c12f7eeac8bd3dabd83272a2c751f72eb664e2b2f35b57201`,
-  matching byte-for-byte.
+  `kgsl-detach-recovery-ptp-interface`, "usb: gadget: mtp: number the PTP
+  interface descriptor at bind").
+- `prebuilt/dt.img`: sha256
+  `0721ba9b1e40f07c12f7eeac8bd3dabd83272a2c751f72eb664e2b2f35b57201`, the
+  QCDT multi-entry device-tree blob.
 
-## Verified non-issues
+`drivers/usb/gadget/android.c` (the composite gadget driver
+`CONFIG_USB_G_ANDROID` selects) `#include`s `f_fs.c` directly and calls
+`functionfs_init()`, so FunctionFS is compiled into this kernel's USB
+gadget regardless of the standalone `CONFIG_USB_FUNCTIONFS` module option,
+which `m8_defconfig` leaves unset. `bootable_recovery@android-14.1`'s
+own default `etc/init.recovery.usb.rc` targets
+`/sys/class/android_usb/android0/*` and mounts `/dev/usb-ffs/adb` itself,
+matching this kernel's gadget mechanism, so `TW_EXCLUDE_DEFAULT_USB_INIT`
+stays unset and no device-specific USB rc is carried (TeamWin's
+`android-8.1` tree's own `recovery/root/init.recovery.usb.rc`, deleted
+here, wrote to the same sysfs nodes with HTC's own idVendor/idProduct; the
+default's generic Google IDs enumerate `adb` over Linux `usbfs`
+identically, since the host matches by the ADB interface class, not by
+VID/PID). `recovery/root/init.recovery.qcom.rc` carries the three
+properties (`sys.usb.ffs.aio_compat`, `persist.adb.nonblocking_ffs`,
+`ro.adb.nonblocking_ffs`) `device/htc/msm8974-common`'s own ROM-side
+init.recovery.qcom.rc sets for the same adbd-over-FFS path.
 
-Two risks the porting roadmap left open, checked this session and closed
-without a code change:
+## Verified non-issue: the cgroup2 per-service fatal path
 
-- **cgroup2 per-service fatal path** (`twrp-14`/`twrp-14.1` only,
-  `TWRP_NEWEST_ROADMAP.md`'s blockers table): this kernel's compat cgroup2
-  filesystem (`d21c4ade876`) mounts a real `cgroup2` filesystem at boot, so
-  `createProcessGroup()` succeeds through the ordinary path and never
-  reaches the fatal branch; `~/Github/m8/lineage-22.2/system/core` carries
-  no "process group" revert commit (`git log --grep`, empty), and needs
-  none, because the mount itself succeeds. This mechanism is generic AOSP
-  `init` code, shared between the ROM's ramdisk and TWRP's own ramdisk on
-  this manifest generation, not something either side sets up specially.
-- **USB gadget mechanism**: see `prebuilt/kernel` above.
+`twrp-14`/`twrp-14.1`'s `init` aborts a service whose `createProcessGroup()`
+fails (the roadmap's blockers table names this as a real, unresolved risk
+for a kernel lacking cgroup2). `~/Github/twrp14-m8/system/core/init/service.cpp`
+and `~/Github/m8/lineage-22.2/system/core/init/service.cpp` both carry
+this exact fatal path unmodified, at nearly the same line number, so
+neither tree reverts it. The ROM build boots and runs real services on
+this same kernel today
+(`Projects/Android/HTC/evidence/lineage22-job036-boot/dmesg.txt`), which
+means `createProcessGroup()` is not failing on this kernel: its compat
+cgroup2 filesystem (`d21c4ade876`, "cgroup: Add compat cgroup2 fs") mounts
+a real `cgroup2` filesystem at boot, so the ordinary path succeeds and the
+fatal branch is never reached. This mechanism is generic AOSP `init`
+code, shared between the ROM's ramdisk and TWRP's own ramdisk on this
+manifest generation, not something either side sets up specially.
 
 ## Boot header
 
 `BoardConfig.mk`'s cmdline, base, pagesize and the three load offsets are
-read back with `unpackbootimg` from build076's own boot.img directly, not
-assumed from `device/htc/msm8974-common`'s `BoardConfigCommon.mk`: that
-tree's declared `BOARD_KERNEL_CMDLINE` additions do not all survive into
-the final image (the flashed header carries no `androidboot.selinux`
-token, and does carry `loop.max_part=7`, the adoptable-storage support
-`BoardConfigCommon.mk` adds for the same reason,
-`HARDWARE_REFERENCE_MATRIX.md` row 20a). Nor from the frozen `android-8.1`
-tree's own values, which differ further still (that tree's cmdline lacks
-`console=none`/`zcache` in the same order and its kernel offset macro
-names differ). `--dt`'s QCDT packer is
-`tools/mkbootimg_dt`, bound through `BOARD_CUSTOM_MKBOOTIMG`
-(`build/make/core/config.mk:683-686` on this manifest, confirmed present),
-because upstream `system/tools/mkbootimg` dropped the v0 header's `--dt`
-flag for the flattened `--dtb` (boot header v1+). The tool is a from-scratch
-reimplementation (no upstream file copied), the same design
-`Oichkatzelesfrettschen/android_device_htc_a11chl`'s own `tools/mkbootimg_dt`
-already proved on this manifest generation.
+read back with `unpackbootimg` from the flashed build's own boot.img
+directly, not assumed from `device/htc/msm8974-common`'s
+`BoardConfigCommon.mk`: that tree's declared `BOARD_KERNEL_CMDLINE`
+additions do not all survive into the final image (the flashed header
+carries no `androidboot.selinux` token, and does carry `loop.max_part=7`,
+the adoptable-storage support `BoardConfigCommon.mk` adds for the same
+reason, `HARDWARE_REFERENCE_MATRIX.md` row 20a). Nor from the frozen
+`android-8.1` tree's own values, which differ further still (that tree's
+cmdline lacks `console=none`/`zcache` in the same order and its kernel
+offset macro names differ).
+
+`--dt`'s QCDT packer is `tools/mkbootimg_dt`, bound through
+`BOARD_CUSTOM_MKBOOTIMG` (`build/make/core/config.mk`, confirmed present
+on this manifest), because upstream `system/tools/mkbootimg` dropped the
+v0 header's `--dt` flag for the flattened `--dtb` (boot header v1+). The
+tool is a from-scratch reimplementation (no upstream file copied), the
+same design `Oichkatzelesfrettschen/android_device_htc_a11chl`'s own
+`tools/mkbootimg_dt` already proved on this manifest generation.
+`build/make/core/Makefile` makes `$(PRODUCT_OUT)/dt.img` a hard ninja
+prerequisite of `recovery.img` whenever `BOARD_KERNEL_SEPARATED_DT` is
+true, unconditionally on `BOARD_KERNEL_PREBUILT_DT` (only
+`vendor/twrp/build/tasks/dt_image.mk`'s own `dtbToolCM` rule is gated on
+that flag); `twrp_m8.mk`'s `PRODUCT_COPY_FILES` entry gives that target a
+producer by copying the checked-in `prebuilt/dt.img` there directly.
 
 ## fstab
 
-`recovery.fstab`'s by-name paths are lifted from the tree that actually
-built build076, `~/Github/m8/lineage-22.2/device/htc/msm8974-common`'s own
-`rootdir/etc/fstab.qcom`, the fstab this device's own ueventd already
-builds those `/dev/block/platform/msm_sdcc.1/by-name/*` links for.
+`recovery.fstab`'s by-name paths are lifted from
+`device/htc/msm8974-common`'s own `rootdir/etc/fstab.qcom`, the fstab
+this device's own ueventd already builds those
+`/dev/block/platform/msm_sdcc.1/by-name/*` links for. `/cache` is ext4,
+not the f2fs that tree declares as its preferred type: this partition's
+f2fs superblock is invalid on the flashed device
+(`libfs_mgr`'s own fallback log,
+`evidence/camera-root-cause/logcat-kernel.txt`, "Invalid f2fs superblock
+... mount(...,ext4)=0: Success"), so the physical format is ext4
+regardless of the declared preference.
 
 ## Scope cuts
 
