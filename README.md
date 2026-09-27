@@ -62,4 +62,7 @@ stock Marshmallow build; no ROM in its history ships FDE/FBE userdata.
 `TW_EXCLUDE_NANO`/`TW_EXCLUDE_BASH` cut the ncurses-terminfo tax neither
 tool needs to install a ROM, sideload, run MTP, or back up/restore.
 
-Build: `source build/envsetup.sh && lunch twrp_m8-eng && make -j$(nproc) recoveryimage`.
+Build: `source build/envsetup.sh && lunch twrp_m8-ap2a-eng && make -j$(nproc) recoveryimage`.
+(`ap2a` is a release-config name under `build/release/`, required by this
+manifest's 3-part `<product>-<release>-<variant>` lunch combo; the older
+2-part form a11chl's own `twrp-11` tree uses predates this requirement.)

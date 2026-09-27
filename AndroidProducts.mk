@@ -3,4 +3,4 @@ PRODUCT_MAKEFILES := \
     $(LOCAL_DIR)/twrp_m8.mk
 
 COMMON_LUNCH_CHOICES := \
-    twrp_m8-eng
+    twrp_m8-ap2a-eng
