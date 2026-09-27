@@ -1,0 +1,16 @@
+// SPDX-License-Identifier: Apache-2.0
+// BOARD_CUSTOM_MKBOOTIMG names this module's output
+// ($(HOST_OUT_EXECUTABLES)/mkbootimg_dt, build/make/core/config.mk:683-686)
+// as the tool build/make/core/Makefile's boot and recovery image rules
+// invoke in place of system/tools/mkbootimg, because this device's hboot
+// reads the v0 header's QCDT dt_size field that upstream mkbootimg dropped.
+cc_binary_host {
+    name: "mkbootimg_dt",
+    srcs: ["mkbootimg_dt.c"],
+    cflags: [
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-std=c11",
+    ],
+}

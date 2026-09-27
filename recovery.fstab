@@ -1,15 +1,27 @@
-# mount point   fstype  device                                       	device2			flags
-/boot		emmc	/dev/block/platform/msm_sdcc.1/by-name/boot
-/cache		ext4	/dev/block/platform/msm_sdcc.1/by-name/cache
-/system		ext4	/dev/block/platform/msm_sdcc.1/by-name/system
-/data		ext4	/dev/block/platform/msm_sdcc.1/by-name/userdata				flags=encryptable=/dev/block/platform/msm_sdcc.1/by-name/extra
-/misc		emmc	/dev/block/platform/msm_sdcc.1/by-name/misc
-/recovery 	emmc	/dev/block/platform/msm_sdcc.1/by-name/recovery				flags=backup=1
-/devlog 	ext4	/dev/block/platform/msm_sdcc.1/by-name/devlog
-/carrier	ext4	/dev/block/platform/msm_sdcc.1/by-name/carrier
-/reserve	vfat	/dev/block/platform/msm_sdcc.1/by-name/reserve
+# SPDX-License-Identifier: Apache-2.0
+# TWRP fstab: <Mount Point> <Fstype> <Block Device> [<Length>] [flags=...]
+#
+# By-name paths lifted from device/htc/msm8974-common@lineage-22.2-m8's own
+# rootdir/etc/fstab.qcom, the fstab this device's own ueventd already builds
+# these /dev/block/platform/msm_sdcc.1/by-name/* links for. RECOVERY_SDCARD_ON_DATA
+# in BoardConfig.mk maps TWRP's "Internal Storage" onto /data/media: this
+# device has no dedicated sdcard partition (DEVICE_STATE.md: "no external SD
+# card -- internal storage only").
 
-# Removable storage
-/external_sd	vfat	/dev/block/mmcblk1p1				/dev/block/mmcblk1	flags=display="Micro SDcard";storage;wipeingui;removable;andsec
-/usb_otg	vfat	/dev/block/sda1					/dev/block/sda		flags=display="USB-OTG";storage;wipeingui;removable
-/sd_ext		ext4	/dev/block/mmcblk1p2			/dev/block/mmcblk1			flags=display="SD-Ext";wipeingui;removable
+/boot           emmc        /dev/block/platform/msm_sdcc.1/by-name/boot          flags=backup=1
+/recovery       emmc        /dev/block/platform/msm_sdcc.1/by-name/recovery      flags=backup=1
+/misc           emmc        /dev/block/platform/msm_sdcc.1/by-name/misc         flags=backup=0
+/system         ext4        /dev/block/platform/msm_sdcc.1/by-name/system        flags=backup=1;wipeingui;
+/cache          ext4        /dev/block/platform/msm_sdcc.1/by-name/cache        flags=backup=1;wipeingui;wipeduringfactoryreset;canencryptbackup=1
+/data           ext4        /dev/block/platform/msm_sdcc.1/by-name/userdata     flags=backup=1;wipeingui;wipeduringfactoryreset;canencryptbackup=1;userdataencryptbackup=1
+
+# Firmware partitions the ROM's own fstab.qcom mounts read-only for HAL use;
+# recoveryonly in that fstab, kept read-only here too. Neither is written by
+# any tool in this tree (HTC AGENTS.md hard boundary: firmware scope is
+# system and boot only).
+/firmware/radio vfat        /dev/block/platform/msm_sdcc.1/by-name/radio        flags=backup=0
+/firmware/adsp  vfat        /dev/block/platform/msm_sdcc.1/by-name/adsp         flags=backup=0
+
+# USB-OTG: every M8 board revision exposes this; no physical microSD slot on
+# the whl (Sprint) hardware, so no /external_sd entry.
+/usb-otg        vfat        /dev/block/sda1        /dev/block/sda     flags=display="USB-OTG";storage;wipeingui;removable
