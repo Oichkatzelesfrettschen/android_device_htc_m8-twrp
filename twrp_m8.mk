@@ -11,6 +11,15 @@ $(call inherit-product, vendor/twrp/config/common.mk)
 # is true, unconditionally on BOARD_KERNEL_PREBUILT_DT (BoardConfig.mk).
 PRODUCT_COPY_FILES += device/htc/m8/prebuilt/dt.img:dt.img
 
+# bootable/recovery's own twrp_ramdisk-timestamp recipe relinks
+# system/etc/task_profiles.json (and, transitively, cgroups.json,
+# libprocessgroup reads both) from the system build's own output into the
+# recovery ramdisk by a plain shell cp, with no ninja edge that builds the
+# file first; a recoveryimage-only build never installs it otherwise.
+# system/core/libprocessgroup/profiles/Android.bp's own prebuilt_etc
+# modules give PRODUCT_PACKAGES a producer for both.
+PRODUCT_PACKAGES += task_profiles.json cgroups.json
+
 # vendor/twrp/config/packages.mk pulls bash, nano, vim, htop and powertop
 # in for external/libncurses's terminfo data; ncurses install runs through
 # ALL_DEFAULT_INSTALLED_MODULES unconditionally on any project inclusion,

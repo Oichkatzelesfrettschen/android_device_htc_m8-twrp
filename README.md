@@ -56,31 +56,29 @@ properties (`sys.usb.ffs.aio_compat`, `persist.adb.nonblocking_ffs`,
 `ro.adb.nonblocking_ffs`) `device/htc/msm8974-common`'s own ROM-side
 init.recovery.qcom.rc sets for the same adbd-over-FFS path.
 
-## The cgroup2 per-service fatal path: strong evidence, not fully closed
+## patches/: the cgroup2 per-service fatal path
 
 `twrp-14`/`twrp-14.1`'s `init` aborts a service whose `createProcessGroup()`
 fails (the roadmap's blockers table names this as a real, unresolved risk
-for a kernel lacking cgroup2). `~/Github/twrp14-m8/system/core/init/service.cpp`
-and the shallow-cloned `~/Github/m8/lineage-22.2/system/core/init/service.cpp`
-both carry this exact fatal path unmodified, at nearly the same line
-number. `HTC/notes/ANDROID15_PORT_LOG.md` names a local, unpushed
-`system/core` commit (`f88047dcb`, "Fix support for devices without
-cgroupv2 support") among the patches this device's Android 15 port
-carries, but the shallow clone (depth 1, one commit visible) cannot
-confirm whether that commit reached the tree that built the
-currently-flashed image, or targets a file this session did not check.
-What is certain: the ROM build boots and runs real services on this same
-kernel today (`Projects/Android/HTC/evidence/lineage22-job036-boot/dmesg.txt`),
-past dozens of services reaching running PIDs, which a service cannot do
-if `createProcessGroup()` hit the fatal path first. The kernel's own
-compat cgroup2 filesystem (`d21c4ade876`, "cgroup: Add compat cgroup2
-fs") is present at the pinned commit and is sufficient on its own to
-explain that outcome (a real `cgroup2` mount lets the ordinary path
-succeed without any userspace patch), so the most likely account is that
-no revert is needed here regardless of what `f88047dcb` fixes elsewhere.
-The RAM-boot test is this claim's real falsifier: a service that never
-reaches a running PID in `logcat`/`dmesg` would mean this reasoning
-missed something.
+for a kernel lacking full cgroup2 support). `bootable_recovery`'s own
+`system/core/init/service.cpp` on this manifest carries that fatal path
+unmodified. `device/htc/msm8974-common`'s own ROM build
+(`lineage-22.2-m8`) does not carry it: its `init/service.cpp` wraps the
+same fatal return in `#if 0`, a byte-for-byte match (context, not just
+message) of `Ultra-Legacy-Hippeastrum/android_system_core@lineage-22.2`
+commit `99dd39e391246da743cf5ce32f545f294f819600`, cherry-picked locally
+into the tree that built the currently-flashed image (a shallow, depth-1
+clone, so the commit itself is not reachable by SHA, but its exact
+content is present at the exact line the upstream commit touches). This
+device's own kernel needing that ROM-side patch is itself the evidence
+that `createProcessGroup()` does fail here at least sometimes, despite
+the compat cgroup2 filesystem (`d21c4ade876`); `patches/system_core-0001-non-fatal-createProcessGroup.patch`
+carries the identical fix into this tree's `system/core`, applied by the
+build job before `make recoveryimage` (idempotent: a second run against
+an already-patched tree is a no-op). The recoveryimage offline
+verification gate asserts the patch reached the built binary by checking
+for the fatal path's now-unreachable log string, absent when the `#if 0`
+block compiles it out.
 
 ## Boot header
 
