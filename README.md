@@ -74,8 +74,10 @@ a fix written for a failure this device specifically hit, so its presence
 in the ROM does not by itself prove `createProcessGroup()` fails on this
 kernel. It is carried into TWRP's own `init` regardless
 (`Oichkatzelesfrettschen/android_system_core-m8-twrp`, branch
-`m8-cgroup2-nonfatal-v2`, pinned in `../../twrp14-m8/.repo/local_manifests`,
-a cherry-pick of the same upstream commit), because it matches the init
+`m8-cgroup2-nonfatal-v2`, pinned in `htc-workbench`'s
+`manifests/twrp14.1-m8-local_manifest.xml` alongside this device tree
+and `android_bootable_recovery-m8-twrp`, a cherry-pick of the same
+upstream commit), because it matches the init
 the flashed ROM actually runs and only turns an abort into a logged
 error -- strictly safer for a recovery build whether or not the failure
 is ever reached in practice. The recoveryimage offline verification gate
