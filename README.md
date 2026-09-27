@@ -56,7 +56,7 @@ properties (`sys.usb.ffs.aio_compat`, `persist.adb.nonblocking_ffs`,
 `ro.adb.nonblocking_ffs`) `device/htc/msm8974-common`'s own ROM-side
 init.recovery.qcom.rc sets for the same adbd-over-FFS path.
 
-## patches/: the cgroup2 per-service fatal path
+## system/core: the cgroup2 per-service fatal path
 
 `twrp-14`/`twrp-14.1`'s `init` aborts a service whose `createProcessGroup()`
 fails (the roadmap's blockers table names this as a real, unresolved risk
@@ -66,19 +66,25 @@ unmodified. `device/htc/msm8974-common`'s own ROM build
 (`lineage-22.2-m8`) does not carry it: its `init/service.cpp` wraps the
 same fatal return in `#if 0`, a byte-for-byte match (context, not just
 message) of `Ultra-Legacy-Hippeastrum/android_system_core@lineage-22.2`
-commit `99dd39e391246da743cf5ce32f545f294f819600`, cherry-picked locally
-into the tree that built the currently-flashed image (a shallow, depth-1
-clone, so the commit itself is not reachable by SHA, but its exact
-content is present at the exact line the upstream commit touches). This
-device's own kernel needing that ROM-side patch is itself the evidence
-that `createProcessGroup()` does fail here at least sometimes, despite
-the compat cgroup2 filesystem (`d21c4ade876`); `patches/system_core-0001-non-fatal-createProcessGroup.patch`
-carries the identical fix into this tree's `system/core`, applied by the
-build job before `make recoveryimage` (idempotent: a second run against
-an already-patched tree is a no-op). The recoveryimage offline
-verification gate asserts the patch reached the built binary by checking
-for the fatal path's now-unreachable log string, absent when the `#if 0`
-block compiles it out.
+commit `99dd39e391246da743cf5ce32f545f294f819600`, present in the tree
+that built the currently-flashed image. `ANDROID15_PORT_LOG.md` records
+that this commit reached the ROM by a wholesale cherry-pick from
+Ultra-Legacy-Hippeastrum's platform for legacy devices generally, not as
+a fix written for a failure this device specifically hit, so its presence
+in the ROM does not by itself prove `createProcessGroup()` fails on this
+kernel. It is carried into TWRP's own `init` regardless
+(`Oichkatzelesfrettschen/android_system_core-m8-twrp`, branch
+`m8-cgroup2-nonfatal-v2`, pinned in `../../twrp14-m8/.repo/local_manifests`,
+a cherry-pick of the same upstream commit), because it matches the init
+the flashed ROM actually runs and only turns an abort into a logged
+error -- strictly safer for a recovery build whether or not the failure
+is ever reached in practice. The recoveryimage offline verification gate
+asserts the fix reached the built `init` binary by checking for the
+fatal path's now-unreachable log string, absent once the `#if 0` block
+compiles it out; whether this device's `createProcessGroup()` ever
+actually fails is the RAM-boot test's own falsifier
+(`grep 'createProcessGroup(' recovery.log dmesg` for "failed for
+service" after boot).
 
 ## Boot header
 

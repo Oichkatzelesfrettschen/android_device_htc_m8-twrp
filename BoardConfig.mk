@@ -104,6 +104,17 @@ BOARD_USES_QCOM_HARDWARE := true
 TARGET_RECOVERY_FSTAB := device/htc/m8/recovery.fstab
 RECOVERY_SDCARD_ON_DATA := true
 
+# bootable/recovery/Android.mk's own twrp_ramdisk-timestamp recipe relinks
+# system/etc/task_profiles.json into the ramdisk (libprocessgroup reads
+# it) with a plain shell cp and no ninja edge that builds the file first;
+# `make recoveryimage` never processes PRODUCT_PACKAGES (that drives
+# system.img, a target this build never runs), so a PRODUCT_PACKAGES
+# entry is not a producer here. TARGET_RECOVERY_DEVICE_MODULES is: it
+# feeds TWRP_REQUIRED_MODULES the same way plat_service_contexts and
+# hwservicemanager already do (Android.mk lines 545-551), which is why
+# those two build successfully with no device-tree entry of their own.
+TARGET_RECOVERY_DEVICE_MODULES += task_profiles.json
+
 # TWRP UI. 1080x1920 panel (msm8974-common BoardConfigCommon.mk,
 # TARGET_SCREEN_DENSITY := 480); portrait_hdpi is the theme
 # TeamWin/android_device_htc_m8@android-8.1 and
