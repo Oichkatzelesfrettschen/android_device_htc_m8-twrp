@@ -12,18 +12,19 @@ newest minimal manifest.
 
 ## Kernel and dt.img
 
-Both are prebuilt blobs unpacked directly from the M8 baseline build's
-boot.img (build 387, `lineage-22.2-20261005-UNOFFICIAL-m8.zip`, sha256
-`6fe4d4650e9dca06141c092991c71792fb5c35aa2153d7124c0d500ce1532cd4`), not
-built from a dts or kernel source tree in this repo. They stay a matched
+Both are prebuilt blobs unpacked directly from the M8 boot.img that pairs
+build 387's ramdisk, cmdline and dt.img with kernel 91cbf4854e0f (boot.img
+sha256 `3332e6ea9be0f5d817fc03a2de6b198c68aa91091f6a79462c8371168602900f`),
+not built from a dts or kernel source tree in this repo. They stay a matched
 pair, because a flashed recovery boots with its own image's dt.img:
 
 - `prebuilt/kernel`: sha256
-  `58313160f75d58692571cc6a223143b735664333c6f96d8ce2326506d9074aeb`,
-  `Linux version 3.4.113-gb1fe523f83a8 ... clang version 22.0.0 ... #3 SMP
-  PREEMPT Sun Oct 4 19:45:57 PDT 2026`, built from
+  `5c52dbe383a93470cd0e714d3348f03be84311863a88aa80f0668366a3901334`,
+  `Linux version 3.4.113-g91cbf4854e0f ... clang version 22.0.0 ... #3 SMP
+  PREEMPT Mon Oct 5 20:30:00 PDT 2026`, built with build 387's kernel
+  `.config` and toolchain from
   `Oichkatzelesfrettschen/android_kernel_htc_msm8974`
-  @`b1fe523f83a8cdd83b6415a16945d593a3dde02e` (branch `lineage-22.2-m8`).
+  @`91cbf4854e0f43e05757c5a05b8c545ce5581955` (branch `lineage-22.2-m8`).
 - `prebuilt/dt.img`: sha256
   `539794f55cec8b0bf8b5d712b0e20e15305d0b504b8ecc29553635853d1e92a0`, the
   QCDT multi-entry device-tree blob.

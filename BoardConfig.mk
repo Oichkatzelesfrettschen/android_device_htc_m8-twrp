@@ -5,11 +5,10 @@
 # TW_MAIN_VERSION_STR 3.7.1_14 (TeamWin/android_bootable_recovery
 # variables.h@android-14.1).
 #
-# Kernel and boot-header facts below are read directly from the M8
-# baseline build's boot.img (build 387, lineage-22.2-20261005-UNOFFICIAL-m8.zip,
-# sha256 6fe4d4650e9dca06141c092991c71792fb5c35aa2153d7124c0d500ce1532cd4,
-# boot.img sha256 2570b386c4c121b7c5831e53d88d3576995c956208a2e8d2c6c5c97d0f65a3a2)
-# with unpackbootimg, not assumed from the frozen TeamWin android-8.1 tree or
+# Kernel and boot-header facts below are read directly from the M8 boot.img
+# that pairs build 387's ramdisk, cmdline and dt.img with kernel 91cbf4854e0f
+# (boot.img sha256 3332e6ea9be0f5d817fc03a2de6b198c68aa91091f6a79462c8371168602900f;
+# build 387's own boot.img, 2570b386, differs only in the kernel) with unpackbootimg, not assumed from the frozen TeamWin android-8.1 tree or
 # from device/htc/msm8974-common's declared BoardConfigCommon.mk, whose
 # BOARD_KERNEL_CMDLINE additions do not all survive into the final image
 # (see BOARD_KERNEL_CMDLINE below).
@@ -28,15 +27,15 @@ TARGET_CPU_ABI2 := armeabi
 TARGET_CPU_VARIANT := krait
 TARGET_CPU_SMP := true
 
-# prebuilt/kernel and prebuilt/dt.img are the baseline build's own boot.img
-# kernel and QCDT blob, kept as a matched pair: a flashed recovery boots
+# prebuilt/kernel and prebuilt/dt.img are that boot.img's kernel and QCDT
+# blob, kept as a matched pair: a flashed recovery boots
 # with the dt.img inside its own image, and that table must describe the
 # board the kernel was built against. prebuilt/kernel (sha256
-# 58313160f75d58692571cc6a223143b735664333c6f96d8ce2326506d9074aeb) reports
-# "Linux version 3.4.113-gb1fe523f83a8 ... clang version 22.0.0 ... #3 SMP
-# PREEMPT Sun Oct 4 19:45:57 PDT 2026", built from
-# Oichkatzelesfrettschen/android_kernel_htc_msm8974
-# @b1fe523f83a8cdd83b6415a16945d593a3dde02e (branch lineage-22.2-m8); the
+# 5c52dbe383a93470cd0e714d3348f03be84311863a88aa80f0668366a3901334) reports
+# "Linux version 3.4.113-g91cbf4854e0f ... clang version 22.0.0 ... #3 SMP
+# PREEMPT Mon Oct 5 20:30:00 PDT 2026", built with build 387's kernel .config
+# and toolchain from Oichkatzelesfrettschen/android_kernel_htc_msm8974
+# @91cbf4854e0f43e05757c5a05b8c545ce5581955 (branch lineage-22.2-m8); the
 # binary ships instead of a local rebuild because a kernel build is not
 # byte-reproducible across build environments. That commit carries the
 # compat cgroup2 filesystem (kernel/cgroup.c compat_cgroup2_fs_type), so
