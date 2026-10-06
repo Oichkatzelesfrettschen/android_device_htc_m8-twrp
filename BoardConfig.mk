@@ -5,13 +5,14 @@
 # TW_MAIN_VERSION_STR 3.7.1_14 (TeamWin/android_bootable_recovery
 # variables.h@android-14.1).
 #
-# Kernel and boot-header facts below are read directly from the
-# currently-flashed build's own boot.img (lineage-22.2-20260926-UNOFFICIAL-m8.zip,
-# sha256 f7437c450d47ba902caf4aa7008b2ee6627df14e1220db483af48a52f59aca99,
-# HARDWARE_REFERENCE_MATRIX.md row 16/276) with unpackbootimg, not assumed
-# from the frozen TeamWin android-8.1 tree or from device/htc/msm8974-common's
-# declared BoardConfigCommon.mk, whose BOARD_KERNEL_CMDLINE additions do not
-# all survive into the final image (see BOARD_KERNEL_CMDLINE below).
+# Kernel and boot-header facts below are read directly from the M8
+# baseline build's boot.img (build 387, lineage-22.2-20261005-UNOFFICIAL-m8.zip,
+# sha256 6fe4d4650e9dca06141c092991c71792fb5c35aa2153d7124c0d500ce1532cd4,
+# boot.img sha256 2570b386c4c121b7c5831e53d88d3576995c956208a2e8d2c6c5c97d0f65a3a2)
+# with unpackbootimg, not assumed from the frozen TeamWin android-8.1 tree or
+# from device/htc/msm8974-common's declared BoardConfigCommon.mk, whose
+# BOARD_KERNEL_CMDLINE additions do not all survive into the final image
+# (see BOARD_KERNEL_CMDLINE below).
 
 TARGET_BOARD_PLATFORM := msm8974
 TARGET_BOARD_PLATFORM_GPU := qcom-adreno330
@@ -27,21 +28,18 @@ TARGET_CPU_ABI2 := armeabi
 TARGET_CPU_VARIANT := krait
 TARGET_CPU_SMP := true
 
-# prebuilt/kernel is build076's own flashed kernel binary (sha256
-# 316967b3a3ad181cb11ffd3b111e176f3f42ceeaca25811eda7dd66bd6a90c1f, its
-# LZMA-compressed payload decompresses to a Linux version banner and an
-# embedded ikconfig identical to the source pin below), not a local
-# rebuild: a kernel build is not byte-reproducible across build
-# environments, and the RAM-boot test should not carry that variable
-# alongside the device tree itself. The pin is
+# prebuilt/kernel and prebuilt/dt.img are the baseline build's own boot.img
+# kernel and QCDT blob, kept as a matched pair: a flashed recovery boots
+# with the dt.img inside its own image, and that table must describe the
+# board the kernel was built against. prebuilt/kernel (sha256
+# 58313160f75d58692571cc6a223143b735664333c6f96d8ce2326506d9074aeb) reports
+# "Linux version 3.4.113-gb1fe523f83a8 ... clang version 22.0.0 ... #3 SMP
+# PREEMPT Sun Oct 4 19:45:57 PDT 2026", built from
 # Oichkatzelesfrettschen/android_kernel_htc_msm8974
-# @4140df22f96e040e5dd51d196e9bd65ad784738c (branch
-# kgsl-detach-recovery-ptp-interface, "usb: gadget: mtp: number the PTP
-# interface descriptor at bind"), the exact commit the flashed build's own
-# proc_version identifies; its embedded ikconfig matches an m8_defconfig
-# build with the LineageOS 18.1 GCC 4.9.x (20150123) prebuilt cross
-# toolchain byte-for-byte. The commit carries the cgroup2 compat
-# filesystem (d21c4ade876, "cgroup: Add compat cgroup2 fs"), so
+# @b1fe523f83a8cdd83b6415a16945d593a3dde02e (branch lineage-22.2-m8); the
+# binary ships instead of a local rebuild because a kernel build is not
+# byte-reproducible across build environments. That commit carries the
+# compat cgroup2 filesystem (kernel/cgroup.c compat_cgroup2_fs_type), so
 # createProcessGroup() succeeds through the ordinary mount path on
 # twrp-14.1's fatal-on-failure init (see README.md, "Verified
 # non-issues"). Its USB gadget is drivers/usb/gadget/android.c's composite
@@ -68,6 +66,14 @@ TARGET_PREBUILT_KERNEL := device/htc/m8/prebuilt/kernel
 # cmdline.
 BOARD_KERNEL_CMDLINE := console=none androidboot.hardware=qcom user_debug=31 ehci-hcd.park=3 zcache loop.max_part=7
 BOARD_KERNEL_CMDLINE += androidboot.selinux=permissive
+# hboot 3.19 boots the recovery partition with androidboot.mode=offmode_charging
+# for power-off charging (USB inserted while the phone is off) and for its
+# RECOVERY menu entry after a USB-insertion power-on, and appends that token
+# after this cmdline, so recovery cannot override it. htc.recovery_boot=1
+# makes arch/arm/mach-msm/devices_cmdline.c report MFG_MODE_RECOVERY for that
+# boot, so board_mfg_mode()'s off-mode checks leave the synaptics touch
+# controller and the CwMcu sensor hub probed.
+BOARD_KERNEL_CMDLINE += htc.recovery_boot=1
 BOARD_KERNEL_BASE := 0x00000000
 BOARD_KERNEL_PAGESIZE := 2048
 
