@@ -6,8 +6,8 @@
 # variables.h@android-14.1).
 #
 # Kernel and boot-header facts below are read directly from the M8 boot.img
-# that pairs build 387's ramdisk, cmdline and dt.img with kernel 91cbf4854e0f
-# (boot.img sha256 3332e6ea9be0f5d817fc03a2de6b198c68aa91091f6a79462c8371168602900f;
+# that pairs build 387's ramdisk, cmdline and dt.img with kernel 0cd1d1eb235f
+# (boot.img sha256 090e1a4d3f69f0f9cdae74c257c4be3dc2f76649b97d653243f682f963165f6d;
 # build 387's own boot.img, 2570b386, differs only in the kernel) with unpackbootimg, not assumed from the frozen TeamWin android-8.1 tree or
 # from device/htc/msm8974-common's declared BoardConfigCommon.mk, whose
 # BOARD_KERNEL_CMDLINE additions do not all survive into the final image
@@ -31,11 +31,11 @@ TARGET_CPU_SMP := true
 # blob, kept as a matched pair: a flashed recovery boots
 # with the dt.img inside its own image, and that table must describe the
 # board the kernel was built against. prebuilt/kernel (sha256
-# 5c52dbe383a93470cd0e714d3348f03be84311863a88aa80f0668366a3901334) reports
-# "Linux version 3.4.113-g91cbf4854e0f ... clang version 22.0.0 ... #3 SMP
-# PREEMPT Mon Oct 5 20:30:00 PDT 2026", built with build 387's kernel .config
+# 157286753e13105f2a59aabaef8db2870ec1288ba0a42849b0ac8598aab36944) reports
+# "Linux version 3.4.113-g0cd1d1eb235f ... clang version 22.0.0 ... #3 SMP
+# PREEMPT Mon Oct 5 22:30:00 PDT 2026", built with build 387's kernel .config
 # and toolchain from Oichkatzelesfrettschen/android_kernel_htc_msm8974
-# @91cbf4854e0f43e05757c5a05b8c545ce5581955 (branch lineage-22.2-m8); the
+# @0cd1d1eb235f6dd09cf8bb61da13080ee76e1cc8 (branch lineage-22.2-m8); the
 # binary ships instead of a local rebuild because a kernel build is not
 # byte-reproducible across build environments. That commit carries the
 # compat cgroup2 filesystem (kernel/cgroup.c compat_cgroup2_fs_type), so
