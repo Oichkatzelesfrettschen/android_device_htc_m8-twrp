@@ -37,12 +37,12 @@
 /cache          ext4        /dev/block/platform/msm_sdcc.1/by-name/cache        flags=backup=1;wipeingui;wipeduringfactoryreset;canencryptbackup=1
 /data           ext4        /dev/block/platform/msm_sdcc.1/by-name/userdata     flags=backup=1;wipeingui;wipeduringfactoryreset;canencryptbackup=1;userdataencryptbackup=1
 
-# Firmware partitions the ROM's own fstab.qcom mounts read-only for HAL use;
-# recoveryonly in that fstab, kept read-only here too. Neither is written by
-# any tool in this tree (HTC AGENTS.md hard boundary: firmware scope is
-# system and boot only).
-/firmware/radio vfat        /dev/block/platform/msm_sdcc.1/by-name/radio        flags=backup=0
-/firmware/adsp  vfat        /dev/block/platform/msm_sdcc.1/by-name/adsp         flags=backup=0
+# The radio and adsp firmware partitions carry no entry. The ROM's
+# fstab.qcom mounts them read-only for its HALs, and recovery uses neither:
+# TWRP mounts every listed partition during its free-space and backup
+# probes, read-write unless the entry sets fsflags=ro, and a read-write vfat
+# mount writes the FAT state. Firmware scope is system and boot only (HTC
+# AGENTS.md hard boundary).
 
 # USB-OTG: every M8 board revision exposes this; no physical microSD slot on
 # the whl (Sprint) hardware, so no /external_sd entry.
