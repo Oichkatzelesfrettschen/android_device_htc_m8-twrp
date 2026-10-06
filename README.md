@@ -12,28 +12,30 @@ newest minimal manifest.
 
 ## Kernel and dt.img
 
-Both are prebuilt blobs unpacked directly from
-`lineage-22.2-20260926-UNOFFICIAL-m8.zip`'s own boot.img (sha256
-`f7437c450d47ba902caf4aa7008b2ee6627df14e1220db483af48a52f59aca99`,
-`HARDWARE_REFERENCE_MATRIX.md` row 16/276), the currently-flashed build,
-not built from a dts or kernel source tree in this repo:
+Both are prebuilt blobs unpacked directly from the M8 baseline build's
+boot.img (build 387, `lineage-22.2-20261005-UNOFFICIAL-m8.zip`, sha256
+`6fe4d4650e9dca06141c092991c71792fb5c35aa2153d7124c0d500ce1532cd4`), not
+built from a dts or kernel source tree in this repo. They stay a matched
+pair, because a flashed recovery boots with its own image's dt.img:
 
 - `prebuilt/kernel`: sha256
-  `316967b3a3ad181cb11ffd3b111e176f3f42ceeaca25811eda7dd66bd6a90c1f`. Its
-  LZMA payload decompresses to `Linux version 3.4.113-g4140df22 ... #2 SMP
-  PREEMPT Sat Sep 26 00:55:13 PDT 2026`, matching the flashed system's own
-  `/proc/version` byte-for-byte
-  (`Projects/Android/HTC/evidence/watchdog-bite-nonrepro-20260926`), and
-  its embedded ikconfig matches an `m8_defconfig` build with the
-  LineageOS 18.1 GCC 4.9.x (20150123) prebuilt cross toolchain
-  byte-for-byte. That short hash resolves to
+  `58313160f75d58692571cc6a223143b735664333c6f96d8ce2326506d9074aeb`,
+  `Linux version 3.4.113-gb1fe523f83a8 ... clang version 22.0.0 ... #3 SMP
+  PREEMPT Sun Oct 4 19:45:57 PDT 2026`, built from
   `Oichkatzelesfrettschen/android_kernel_htc_msm8974`
-  @`4140df22f96e040e5dd51d196e9bd65ad784738c` (branch
-  `kgsl-detach-recovery-ptp-interface`, "usb: gadget: mtp: number the PTP
-  interface descriptor at bind").
+  @`b1fe523f83a8cdd83b6415a16945d593a3dde02e` (branch `lineage-22.2-m8`).
 - `prebuilt/dt.img`: sha256
-  `0721ba9b1e40f07c12f7eeac8bd3dabd83272a2c751f72eb664e2b2f35b57201`, the
+  `539794f55cec8b0bf8b5d712b0e20e15305d0b504b8ecc29553635853d1e92a0`, the
   QCDT multi-entry device-tree blob.
+
+hboot 3.19 boots the recovery partition with
+`androidboot.mode=offmode_charging` when USB is inserted into a powered-off
+phone and when its RECOVERY menu entry follows a USB-insertion power-on.
+The kernel's `board_mfg_mode()` then skips probing the touch controller
+and the sensor hub, which leaves TWRP without touch.
+`BOARD_KERNEL_CMDLINE` carries `htc.recovery_boot=1`, which the kernel's
+`arch/arm/mach-msm/devices_cmdline.c` maps to `MFG_MODE_RECOVERY` for that
+boot, so every recovery-partition boot runs TWRP with its input devices.
 
 `drivers/usb/gadget/android.c` (the composite gadget driver
 `CONFIG_USB_G_ANDROID` selects) `#include`s `f_fs.c` directly and calls
