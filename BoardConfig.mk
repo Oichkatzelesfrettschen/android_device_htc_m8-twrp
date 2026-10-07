@@ -5,13 +5,16 @@
 # TW_MAIN_VERSION_STR 3.7.1_14 (TeamWin/android_bootable_recovery
 # variables.h@android-14.1).
 #
-# Kernel and boot-header facts below are read directly from the M8 boot.img
-# that pairs build 387's ramdisk, cmdline and dt.img with kernel 0cd1d1eb235f
-# (boot.img sha256 090e1a4d3f69f0f9cdae74c257c4be3dc2f76649b97d653243f682f963165f6d;
-# build 387's own boot.img, 2570b386, differs only in the kernel) with unpackbootimg, not assumed from the frozen TeamWin android-8.1 tree or
-# from device/htc/msm8974-common's declared BoardConfigCommon.mk, whose
-# BOARD_KERNEL_CMDLINE additions do not all survive into the final image
-# (see BOARD_KERNEL_CMDLINE below).
+# The recovery kernel provenance and boot-header facts use separate inputs.
+# The kernel comes from the merged Clang ThinLTO build documented below.
+# Header facts come from the M8 boot.img pairing build 387's ramdisk, cmdline
+# and dt.img with kernel 0cd1d1eb235f (sha256
+# 090e1a4d3f69f0f9cdae74c257c4be3dc2f76649b97d653243f682f963165f6d; build
+# 387's own boot.img, 2570b386, differs only in the kernel) and are read with
+# unpackbootimg. The frozen TeamWin android-8.1 tree and
+# device/htc/msm8974-common's declared BoardConfigCommon.mk do not establish
+# the final header values; that common file's BOARD_KERNEL_CMDLINE additions
+# do not all survive into the final image (see BOARD_KERNEL_CMDLINE below).
 
 TARGET_BOARD_PLATFORM := msm8974
 TARGET_BOARD_PLATFORM_GPU := qcom-adreno330
