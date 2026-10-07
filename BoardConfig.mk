@@ -27,18 +27,19 @@ TARGET_CPU_ABI2 := armeabi
 TARGET_CPU_VARIANT := krait
 TARGET_CPU_SMP := true
 
-# prebuilt/kernel and prebuilt/dt.img are that boot.img's kernel and QCDT
-# blob, kept as a matched pair: a flashed recovery boots
-# with the dt.img inside its own image, and that table must describe the
-# board the kernel was built against. prebuilt/kernel (sha256
-# 157286753e13105f2a59aabaef8db2870ec1288ba0a42849b0ac8598aab36944) reports
-# "Linux version 3.4.113-g0cd1d1eb235f ... clang version 22.0.0 ... #3 SMP
-# PREEMPT Mon Oct 5 22:30:00 PDT 2026", built with build 387's kernel .config
-# and toolchain from Oichkatzelesfrettschen/android_kernel_htc_msm8974
-# @0cd1d1eb235f6dd09cf8bb61da13080ee76e1cc8 (branch lineage-22.2-m8); the
-# binary ships instead of a local rebuild because a kernel build is not
-# byte-reproducible across build environments. That commit carries the
-# compat cgroup2 filesystem (kernel/cgroup.c compat_cgroup2_fs_type), so
+# prebuilt/kernel and prebuilt/dt.img are the recovery kernel and QCDT
+# table. The kernel build has no device-tree source delta from v18, so the
+# existing build-387 dt.img remains its byte-identical match. prebuilt/kernel
+# (sha256 eac30b65385dfd2e2274cc8def4a6fbc496a99ce1ab48081a52a985df246189f)
+# reports "Linux version 3.4.113-g9d2468e726c5 ... clang version 22.0.0 ...
+# #1 SMP PREEMPT Sun Oct 4 19:45:57 PDT 2026", built from
+# Oichkatzelesfrettschen/android_kernel_htc_msm8974@9d2468e726c5e78c774f47dee8176d25323c2c7e
+# with build 387's release-candidate .config, Clang r584948 ThinLTO, and
+# -Werror. Its cgroup_bpf_inherit() returns compute_effective_progs()'s error,
+# including -EBUSY, instead of replacing it with -ENOMEM. The binary ships
+# instead of a local rebuild because a kernel build is not byte-reproducible
+# across build environments. The kernel carries the compat cgroup2 filesystem
+# (kernel/cgroup.c compat_cgroup2_fs_type), so
 # createProcessGroup() succeeds through the ordinary mount path on
 # twrp-14.1's fatal-on-failure init (see README.md, "Verified
 # non-issues"). Its USB gadget is drivers/usb/gadget/android.c's composite
