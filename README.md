@@ -12,22 +12,27 @@ newest minimal manifest.
 
 ## Kernel and dt.img
 
-Both are prebuilt blobs unpacked directly from the M8 boot.img that pairs
-build 387's ramdisk, cmdline and dt.img with kernel 0cd1d1eb235f (boot.img
-sha256 `090e1a4d3f69f0f9cdae74c257c4be3dc2f76649b97d653243f682f963165f6d`),
-not built from a dts or kernel source tree in this repo. They stay a matched
-pair, because a flashed recovery boots with its own image's dt.img:
+The kernel is a prebuilt from the M8 kernel build at the merged
+`lineage-22.2-m8` revision. The dt.img remains the build-387 QCDT blob
+because the kernel tree has no device-tree source delta from v18; its SHA-256
+matches the existing prebuilt byte for byte. A flashed recovery boots with
+the dt.img inside its own image:
 
 - `prebuilt/kernel`: sha256
-  `157286753e13105f2a59aabaef8db2870ec1288ba0a42849b0ac8598aab36944`,
-  `Linux version 3.4.113-g0cd1d1eb235f ... clang version 22.0.0 ... #3 SMP
-  PREEMPT Mon Oct 5 22:30:00 PDT 2026`, built with build 387's kernel
-  `.config` and toolchain from
+  `eac30b65385dfd2e2274cc8def4a6fbc496a99ce1ab48081a52a985df246189f`,
+  `Linux version 3.4.113-g9d2468e726c5 ... clang version 22.0.0 ... #1 SMP
+  PREEMPT Sun Oct 4 19:45:57 PDT 2026`, built from
   `Oichkatzelesfrettschen/android_kernel_htc_msm8974`
-  @`0cd1d1eb235f6dd09cf8bb61da13080ee76e1cc8` (branch `lineage-22.2-m8`).
+  @`9d2468e726c5e78c774f47dee8176d25323c2c7e` (branch `lineage-22.2-m8`)
+  with build 387's release-candidate `.config`, Clang r584948 ThinLTO, and
+  `-Werror`. `cgroup_bpf_inherit()` returns the error from
+  `compute_effective_progs()`, preserving `-EBUSY` instead of returning
+  `-ENOMEM`. The binary ships instead of a local rebuild because a kernel
+  build is not byte-reproducible across build environments.
 - `prebuilt/dt.img`: sha256
   `539794f55cec8b0bf8b5d712b0e20e15305d0b504b8ecc29553635853d1e92a0`, the
-  QCDT multi-entry device-tree blob.
+  unchanged build-387 QCDT multi-entry device-tree blob; the merged kernel
+  build records no DTS source delta from v18.
 
 hboot 3.19 boots the recovery partition with
 `androidboot.mode=offmode_charging` when USB is inserted into a powered-off
